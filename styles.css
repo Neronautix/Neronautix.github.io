@@ -1,0 +1,54 @@
+*{
+    margin:0;
+    padding:0;
+}
+body{
+    display: grid;
+    background-color:#333;
+    justify-items:center;
+    align-items:center;
+    column-gap:10px;
+}
+.board{
+    display:grid;
+    background-color: #111;
+    padding: 7px;
+    grid-template-rows: repeat(9,auto);
+    grid-template-columns: repeat(9,auto);
+    column-gap:2px;
+    row-gap: 2px;
+}
+.cell{
+    display: grid;
+    justify-items: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    background-color: beige;
+}
+.cell:nth-child(3n){
+    margin-right: 3px;
+}
+
+.cell:nth-child(27n + 28),
+.cell:nth-child(27n + 29),
+.cell:nth-child(27n + 30),
+.cell:nth-child(27n + 31),
+.cell:nth-child(27n + 32),
+.cell:nth-child(27n + 33),
+.cell:nth-child(27n + 34),
+.cell:nth-child(27n + 35),
+.cell:nth-child(27n + 36) {
+  margin-top: 3px;
+}
+
+.cell>input{
+    text-align:center;
+    width: 50px;
+    height: 50px;
+    background-color: beige;
+}
+input:focus{
+    background: lightblue;
+    outline: 0;
+}
