@@ -15,6 +15,9 @@ class Sudoku{
   getCell(row,col){
     return this.format[row][col]
   }
+  setCell(row,col,num){
+    this.format[row][col] = num
+  }
   checkRow(number,row){
     return this.format[row].includes(number)
   }
@@ -67,15 +70,18 @@ sudoku.isValid()
 
 createBoard()
 function createBoard(){
+  let id = 0;
   for(let row = 0; row < 9;row++){
     for(let col=0; col < 9; col++){
       cell = document.createElement('div')
       // input = document.createElement('input')
       // input.value = sudoku.getCell(row,col)
       cell.classList.add('cell','row-'+row,'col-'+col)
+      cell.id=id
       cell.innerHTML = sudoku.getCell(row,col)
       // cell.appendChild(input)
       document.getElementsByClassName('board')[0].appendChild(cell)
+      id++
     }
   }
 }
@@ -97,5 +103,10 @@ window.addEventListener('click',ev=>{
 })
 window.addEventListener('keydown',ev=>{
   // console.log(ev)
-  if(selected) previousTarget.innerHTML = ev.key
+  if(selected){
+    previousTarget.innerHTML = ev.key
+    row = previousTarget.classList[1].split('row-')[1]
+    col = previousTarget.classList[2].split('col-')[1]
+    console.log(sudoku.getCell(row,col))
+  }
 })
