@@ -9,110 +9,11 @@
 </head>
 <body>
     
-<img height="50" width="100" src="kitsunero.svg"/>
-<div class="board">
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-        <div class="cell"><input></div>
-    </div>
+<!-- <img height="50" width="100" src="kitsunero.svg"/> -->
+<div class="board"></div> 
 </div>
 </body>
 <script>
-    id = 0;
-    firstBox = [0,1,2,9,10,11,18,19,20]
-    fifthBox = [30,31,32,39,40,41,48,49,50]
-    ninthBox = [60,61,62,69,70,71,78,79,80]
-    validNumbers =[]
-    count = 0;
-    for (tags of document.getElementsByTagName('input')){
-        validNumbers.length === 0 ? validNumbers = [1,2,3,4,5,6,7,8,9]: null;
-        if (firstBox.includes(id) || fifthBox.includes(id) || ninthBox.includes(id)){
-            tags.value = validNumbers.pop()
-            id++;
-        }
-        else{
-            id++;
-            continue;
-        }
-
-        }
 </script>
+<script src="./sudoku.js"></script>
 </html>
