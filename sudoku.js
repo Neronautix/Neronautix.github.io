@@ -1,6 +1,22 @@
 // commit
-const TEST_SUDOKU = [3,5,8,6,9,1,2,7,4,2,1,9,8,7,4,5,6,3,4,6,7,3,5,2,8,9,1,9,8,2,1,6,3,7,4,5,1,4,6,5,8,7,9,3,2,7,3,5,4,2,9,6,1,8,5,7,1,2,3,6,4,8,9,6,2,3,9,4,8,1,5,7,8,9,4,7,1,5,3,2,6]
-
+const TEST_SUDOKU = [3,5,8,6,9,1,2,7,4,
+                      2,1,9,8,7,4,5,6,3,
+                      4,6,7,3,5,2,8,9,1,
+                      9,8,2,1,6,3,7,4,5,
+                      1,4,6,5,8,7,9,3,2,
+                      7,3,5,4,2,9,6,1,8,
+                      5,7,1,2,3,6,4,8,9,
+                      6,2,3,9,4,8,1,5,7,
+                      8,9,4,7,1,5,3,2,6]
+const SOLVE_SUDOKU = [3,5,8,6,0,1,2,7,4,
+                      2,1,9,8,7,4,5,6,3,
+                      4,6,7,3,5,2,8,9,1,
+                      9,8,2,1,6,3,7,4,5,
+                      1,4,6,5,4,7,9,3,2,
+                      7,3,5,4,2,9,6,1,8,
+                      5,7,1,2,3,6,4,8,9,
+                      6,2,3,9,4,8,1,5,7,
+                      8,9,4,7,1,5,3,2,6]
 class Sudoku{
   constructor(board){
     this.board = board
@@ -63,11 +79,22 @@ class Sudoku{
     })
     return valid
   }
-}
+  solve(){
+    for(let r=0;r<9;r++){
+      for(let c=0;c<9;c++){
+            if(!this.isValid() ) {
+              for (let i=1;i<10;i++){
+                this.setCell(r,c,i)
+                console.log(r,c,i)
+              }
+            }
+          }
+        }
+      }
+    }
 
 sudoku = new Sudoku(TEST_SUDOKU)
-
-sudoku.isValid()
+// sudoku.solve()
 
 createBoard()
 function createBoard(){
@@ -100,6 +127,9 @@ window.addEventListener('click',ev=>{
     ev.target.style.backgroundColor = "aqua"
     previousTarget = ev.target
     selected = true;
+    row = previousTarget.classList[1].split('row-')[1]
+    col = previousTarget.classList[2].split('col-')[1]
+    console.log(sudoku.getCell(row,col))
   }
 })
 window.addEventListener('keydown',ev=>{

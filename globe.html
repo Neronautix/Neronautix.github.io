@@ -1,0 +1,31 @@
+<style>
+    body{
+        background-color: #111;
+        margin: 0;
+    }
+</style>
+<canvas></canvas>
+<script>
+    const canvas = document.querySelector('canvas')
+    let width = window.innerWidth
+    let height = window.innerHeight
+    canvas.width = width
+    canvas.height = height
+    const ct = canvas.getContext("2d")
+    ct.fillStyle = "red";
+
+    animate()
+    function animate(){
+        ct.fillRect(Math.random()*window.innerWidth,Math.random()*window.innerHeight,1,1)
+        ct.fillRect(Math.random()*window.innerWidth,Math.random()*window.innerHeight,1,1)
+        window.requestAnimationFrame(animate);
+
+    }
+    window.addEventListener('resize',()=>{
+        width = window.innerWidth
+        height = window.innerHeight
+        canvas.width = width
+        canvas.height = height
+        console.log(width,height)
+    })
+</script>
