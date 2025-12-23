@@ -1,0 +1,160 @@
+/* Reset und Basis */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+body {
+    line-height: 1.6;
+    background-color: #fff8e1; /* Cremiges Hellgelb – warm und neutral */
+    color: #5a1715; /* Dunkles Rotbraun für Text */
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Subtiler fallender Schnee-Effekt für Weihnachtsstimmung */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: transparent;
+    pointer-events: none;
+    animation: snow 20s linear infinite;
+    background-image: 
+        radial-gradient(circle, white 1px, transparent 1px),
+        radial-gradient(circle, white 2px, transparent 2px),
+        radial-gradient(circle, white 1.5px, transparent 1.5px);
+    background-size: 50px 50px, 80px 80px, 60px 60px;
+    background-position: 0 0, 20px 30px, 40px 10px;
+    opacity: 0.6;
+    z-index: 0;
+}
+
+@keyframes snow {
+    0% { transform: translateY(-100vh); }
+    100% { transform: translateY(100vh); }
+}
+
+/* Navigation */
+nav {
+    background-color: #5a1715; /* Dunkles Rotbraun */
+    padding: 1rem;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.logo {
+    max-width: 60px;
+    height: auto;
+    margin-left: 1rem;
+    border-radius: 50%;
+    border: 3px solid #ffe372;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    margin-right: 1rem;
+}
+
+nav ul li {
+    margin-left: 2rem;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: color 0.3s, transform 0.3s;
+}
+
+nav ul li a:hover {
+    color: #ec821b; /* Orange */
+    transform: scale(1.1);
+}
+
+/* Hero Section */
+.hero {
+    height: 100vh;
+    background: linear-gradient(to right, #ffe372, #ec821b); /* Gelb zu Orange */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #5a1715;
+    padding-top: 80px; /* Platz für Navigation */
+    position: relative;
+    z-index: 1;
+}
+
+.hero-content h1 {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.hero-content p {
+    font-size: 1.4rem;
+    max-width: 800px;
+    margin-bottom: 3rem;
+}
+
+.hero-content a {
+    background-color: #ec821b;
+    color: #fff;
+    padding: 1rem 3rem;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    transition: all 0.4s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.hero-content a:hover {
+    background-color: #5a1715;
+    color: #ffe372;
+    transform: translateY(-5px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-content h1 {
+        font-size: 2.5rem;
+    }
+
+    .hero-content p {
+        font-size: 1.1rem;
+        padding: 0 1rem;
+    }
+
+    nav {
+        flex-direction: column;
+        padding: 1rem 0;
+    }
+
+    nav ul {
+        margin-top: 1rem;
+        flex-direction: row;
+        gap: 1.5rem;
+    }
+
+    nav ul li {
+        margin-left: 0;
+    }
+
+    .logo {
+        max-width: 50px;
+    }
+}
