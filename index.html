@@ -235,9 +235,17 @@
     ];
 
     const API = 'https://api.opendota.com/api';
+    // Optional: API-Key hier eintragen für höheres Limit (https://www.opendota.com/api-keys)
+    const API_KEY = ''; // z.B. 'dein-key-hier'
+
     let currentId = PROFILES[0].id;
     let heroesMap = {};
     let chartInstance = null;
+    let isLoading = false;
+
+    // Cache: profil-daten + zeitstempel (5 Minuten gültig)
+    const cache = new Map();
+    const CACHE_TTL_MS = 5 * 60 * 1000;
 
     // ─── Helpers ───────────────────────────────────────────────────────────
     function rankTierToString(tier) {
@@ -273,32 +281,84 @@
       return isRadiant === match.radiant_win;
     }
 
-    async function fetchJSON(url) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    /** Fetch mit Retry bei 429 und optionalem API-Key */
+    async function fetchJSON(url, retries = 3) {
+      const fullUrl = API_KEY
+        ? (url.includes('?') ? `${url}&api_key=${API_KEY}` : `${url}?api_key=${API_KEY}`)
+        : url;
+
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        const res = await fetch(fullUrl);
+
+        if (res.status === 429) {
+          // Retry-After Header oder exponential backoff
+          const retryAfter = parseInt(res.headers.get('Retry-After') || '0', 10);
+          const wait = retryAfter > 0 ? retryAfter * 1000 : Math.min(1000 * Math.pow(2, attempt), 8000);
+          console.warn(`429 Rate Limit – warte ${wait}ms (Versuch ${attempt + 1}/${retries + 1})`);
+          if (attempt === retries) throw new Error('Rate Limit (429) – bitte 1 Minute warten und erneut versuchen');
+          await sleep(wait);
+          continue;
+        }
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      }
+    }
+
+    /** Endpoints nacheinander laden (weniger Last auf die API) */
+    async function fetchPlayerData(accountId) {
+      const endpoints = [
+        `${API}/players/${accountId}`,
+        `${API}/players/${accountId}/wl`,
+        `${API}/players/${accountId}/totals`,
+        `${API}/players/${accountId}/heroes`,
+        `${API}/players/${accountId}/recentMatches`,
+        `${API}/players/${accountId}/peers`
+      ];
+
+      const results = [];
+      for (let i = 0; i < endpoints.length; i++) {
+        results.push(await fetchJSON(endpoints[i]));
+        // kleine Pause zwischen Requests (außer beim letzten)
+        if (i < endpoints.length - 1) await sleep(120);
+      }
+      return {
+        player: results[0],
+        wl: results[1],
+        totals: results[2],
+        heroes: results[3],
+        recent: results[4],
+        peers: results[5]
+      };
     }
 
     // ─── Profile tabs ──────────────────────────────────────────────────────
     function renderProfileTabs() {
       const container = document.getElementById('profile-tabs');
-      container.innerHTML = PROFILES.map(p => `
+      container.innerHTML = PROFILES.map(p => {
+        const cached = cache.has(p.id);
+        return `
         <button
           onclick="switchProfile(${p.id})"
           class="profile-tab flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 ${p.id === currentId ? 'active' : ''}"
           data-id="${p.id}"
+          ${isLoading ? 'disabled' : ''}
         >
           <img src="${p.avatar}" alt="" class="w-8 h-8 rounded-full object-cover border border-slate-600" />
           <div class="text-left">
-            <p class="font-semibold text-sm leading-tight">${p.short}</p>
+            <p class="font-semibold text-sm leading-tight">${p.short}${cached ? ' <span class="text-emerald-400 text-xs">●</span>' : ''}</p>
             <p class="text-xs text-slate-400 font-mono">${p.id}</p>
           </div>
-        </button>
-      `).join('');
+        </button>`;
+      }).join('');
     }
 
     function switchProfile(id) {
-      if (id === currentId) return;
+      if (id === currentId || isLoading) return;
       currentId = id;
       renderProfileTabs();
       loadAll();
@@ -311,24 +371,46 @@
       heroes.forEach(h => { heroesMap[h.id] = h.localized_name; });
     }
 
-    async function loadAll() {
-      document.getElementById('loading').classList.remove('hidden');
+    async function loadAll(forceRefresh = false) {
+      if (isLoading) return;
+      isLoading = true;
+      renderProfileTabs();
+
+      const loadingEl = document.getElementById('loading');
+      loadingEl.classList.remove('hidden');
+      loadingEl.innerHTML = `
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+        <p class="mt-4 text-slate-400">Lade Statistiken von OpenDota API...</p>
+      `;
       document.getElementById('content').classList.add('hidden');
       document.getElementById('account-id').textContent = currentId;
       document.getElementById('opendota-link').href = `https://www.opendota.com/players/${currentId}`;
       document.title = `Dota 2 Stats – ${PROFILES.find(p => p.id === currentId)?.name || currentId}`;
 
+      const cached = cache.get(currentId);
+      const cacheValid = cached && (Date.now() - cached.ts < CACHE_TTL_MS) && !forceRefresh;
+
       try {
         await loadHeroes();
 
-        const [player, wl, totals, heroes, recent, peers] = await Promise.all([
-          fetchJSON(`${API}/players/${currentId}`),
-          fetchJSON(`${API}/players/${currentId}/wl`),
-          fetchJSON(`${API}/players/${currentId}/totals`),
-          fetchJSON(`${API}/players/${currentId}/heroes`),
-          fetchJSON(`${API}/players/${currentId}/recentMatches`),
-          fetchJSON(`${API}/players/${currentId}/peers`)
-        ]);
+        let player, wl, totals, heroes, recent, peers;
+
+        if (cacheValid) {
+          // Aus Cache – keine API-Calls
+          ({ player, wl, totals, heroes, recent, peers } = cached.data);
+          loadingEl.querySelector('p').textContent = 'Aus Cache geladen...';
+        } else {
+          loadingEl.querySelector('p').textContent = 'Lade Statistiken von OpenDota API (rate-limit-schonend)...';
+          const data = await fetchPlayerData(currentId);
+          player = data.player;
+          wl = data.wl;
+          totals = data.totals;
+          heroes = data.heroes;
+          recent = data.recent;
+          peers = data.peers;
+          // speichern
+          cache.set(currentId, { ts: Date.now(), data: { player, wl, totals, heroes, recent, peers } });
+        }
 
         // Profile header
         const avatarUrl = player.profile?.avatarfull || player.profile?.avatarmedium || '';
@@ -492,13 +574,19 @@
         document.getElementById('loading').innerHTML = `
           <p class="text-red-400 text-lg">Fehler beim Laden der Daten</p>
           <p class="text-slate-400 mt-2">${err.message}</p>
+          <p class="text-slate-500 text-sm mt-1">Bei 429: ca. 1 Minute warten, dann erneut versuchen.</p>
           <button onclick="refreshData()" class="mt-4 px-4 py-2 bg-indigo-600 rounded-lg">Erneut versuchen</button>
         `;
+      } finally {
+        isLoading = false;
+        renderProfileTabs();
       }
     }
 
     function refreshData() {
-      loadAll();
+      // Cache für aktuelles Profil invalidieren und neu laden
+      cache.delete(currentId);
+      loadAll(true);
     }
 
     // Init
