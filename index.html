@@ -1,255 +1,509 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neronautix | Developer & Problem Solver</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-    <style>
-        :root {
-            --bg: #0a0a0a;
-            --accent: #00ff9d;
-            --text: #e0e0e0;
-            --gray: #aaaaaa;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
-
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            padding: 1.5rem 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-            transition: 0.4s;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            letter-spacing: -2px;
-            color: white;
-        }
-
-        .logo span {
-            color: var(--accent);
-        }
-
-        .nav-links a {
-            color: var(--text);
-            margin-left: 2rem;
-            text-decoration: none;
-            font-weight: 500;
-            transition: 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--accent);
-        }
-
-        /* Hero */
-        .hero {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            position: relative;
-            background: linear-gradient(rgba(10,10,10,0.85), rgba(10,10,10,0.95)), 
-                        url('https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?q=80&w=2070') center/cover no-repeat;
-        }
-
-        .hero-content {
-            max-width: 900px;
-            padding: 0 20px;
-            z-index: 2;
-        }
-
-        .hero h1 {
-            font-size: 4.5rem;
-            line-height: 1.1;
-            margin-bottom: 1rem;
-        }
-
-        .hero .highlight {
-            color: var(--accent);
-        }
-
-        .hero p {
-            font-size: 1.4rem;
-            color: var(--gray);
-            margin-bottom: 2.5rem;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 14px 36px;
-            background: var(--accent);
-            color: black;
-            font-weight: 700;
-            border-radius: 50px;
-            text-decoration: none;
-            transition: all 0.3s;
-            font-size: 1.1rem;
-        }
-
-        .btn:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 30px rgba(0, 255, 157, 0.3);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--accent);
-            color: var(--accent);
-            margin-left: 15px;
-        }
-
-        /* Sections */
-        section {
-            padding: 100px 8%;
-        }
-
-        h2 {
-            font-size: 3rem;
-            text-align: center;
-            margin-bottom: 4rem;
-        }
-
-        .about {
-            background: #111;
-        }
-
-        .projects {
-            background: var(--bg);
-        }
-
-        .project-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
-        }
-
-        .project-card {
-            background: #1a1a1a;
-            border-radius: 16px;
-            overflow: hidden;
-            transition: 0.4s;
-        }
-
-        .project-card:hover {
-            transform: translateY(-12px);
-            box-shadow: 0 20px 40px rgba(0, 255, 157, 0.15);
-        }
-
-        .project-card h3 {
-            padding: 1.5rem 1.5rem 0.5rem;
-        }
-
-        .project-card p {
-            padding: 0 1.5rem 1.5rem;
-            color: var(--gray);
-        }
-
-        footer {
-            text-align: center;
-            padding: 3rem;
-            background: #0a0a0a;
-            color: var(--gray);
-        }
-
-        .socials a {
-            font-size: 1.8rem;
-            margin: 0 15px;
-            color: var(--gray);
-            transition: 0.3s;
-        }
-
-        .socials a:hover {
-            color: var(--accent);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dota 2 Stats – ENT Stack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .hero-card:hover { transform: translateY(-2px); }
+    .stat-card { transition: all 0.2s ease; }
+    .stat-card:hover { transform: scale(1.02); }
+    .gradient-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    }
+    .win { color: #22c55e; }
+    .loss { color: #ef4444; }
+    .profile-tab {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .profile-tab:hover { background: rgba(99, 102, 241, 0.2); }
+    .profile-tab.active {
+      background: rgba(99, 102, 241, 0.35);
+      border-color: rgb(99, 102, 241);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.5);
+    }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #1e293b; }
+    ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+  </style>
 </head>
-<body>
+<body class="gradient-bg min-h-screen text-slate-100">
+  <div class="max-w-7xl mx-auto px-4 py-8">
 
-    <!-- Navigation -->
-    <nav>
-        <div class="logo">NERO<span>NAUTIX</span></div>
-        <div class="nav-links">
-            <a href="#about">Über mich</a>
-            <a href="#projects">Projekte</a>
-            <a href="https://github.com/Neronautix" target="_blank">GitHub</a>
-            <a href="#contact">Kontakt</a>
-        </div>
-    </nav>
-
-    <!-- Hero -->
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Hey, ich bin <span class="highlight">Neronautix</span></h1>
-            <p>Full-Stack Developer • Python Enthusiast • Dota 2 Autoexec Wizard</p>
-            <div>
-                <a href="#projects" class="btn">Meine Projekte</a>
-                <a href="https://github.com/Neronautix" target="_blank" class="btn btn-outline">GitHub Profil</a>
-            </div>
-        </div>
+    <!-- Profile Switcher -->
+    <section class="mb-8">
+      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Profil wählen</h2>
+      <div id="profile-tabs" class="flex flex-wrap gap-3">
+        <!-- filled by JS -->
+      </div>
     </section>
 
-    <!-- About -->
-    <section id="about" class="about">
-        <h2>Über mich</h2>
-        <p style="max-width: 700px; margin: 0 auto; text-align: center; font-size: 1.25rem; color: var(--gray);">
-            Ich bin ein leidenschaftlicher Entwickler mit Fokus auf Python, Web-Technologien und Automatisierung. 
-            Nebenbei bastel ich an kleinen Tools, experimentiere mit Node.js und optimiere meine Dota 2 Configs.
-        </p>
-    </section>
-
-    <!-- Projects -->
-    <section id="projects" class="projects">
-        <h2>Ausgewählte Projekte</h2>
-        <div class="project-grid">
-            <div class="project-card">
-                <h3>python_snippets</h3>
-                <p>Sammlung nützlicher Python-Skripte und Tools für den Alltag.</p>
-                <p><a href="https://github.com/Neronautix/python_snippets" style="color: var(--accent);">→ Zum Repo</a></p>
-            </div>
-            <div class="project-card">
-                <h3>autoexec.cfg</h3>
-                <p>Meine persönliche Dota 2 Konfiguration mit vielen Quality-of-Life Features.</p>
-                <p><a href="https://github.com/Neronautix/autoexec.cfg" style="color: var(--accent);">→ Zum Repo</a></p>
-            </div>
-            <div class="project-card">
-                <h3>Neronautix.github.io</h3>
-                <p>Diese Website selbst – immer im Wandel.</p>
-                <p><a href="#" style="color: var(--accent);">→ Aktuell</a></p>
-            </div>
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row items-center gap-6 mb-10">
+      <img id="avatar" src="" alt="Avatar" class="w-28 h-28 rounded-2xl border-4 border-indigo-500 shadow-xl shadow-indigo-500/30 object-cover" />
+      <div class="text-center md:text-left">
+        <h1 id="player-name" class="text-4xl font-extrabold tracking-tight">Lade...</h1>
+        <p class="text-slate-400 mt-1">Account ID: <span id="account-id" class="font-mono text-indigo-300">–</span></p>
+        <div class="flex flex-wrap gap-3 mt-3 justify-center md:justify-start">
+          <span id="rank-badge" class="px-3 py-1 rounded-full bg-indigo-600/40 text-indigo-200 text-sm font-medium"></span>
+          <span id="mmr-badge" class="px-3 py-1 rounded-full bg-emerald-600/40 text-emerald-200 text-sm font-medium"></span>
+          <span id="country-badge" class="px-3 py-1 rounded-full bg-slate-600/40 text-slate-200 text-sm font-medium"></span>
         </div>
-    </section>
+      </div>
+      <div class="md:ml-auto flex gap-3">
+        <a id="opendota-link" href="#" target="_blank" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl font-semibold transition">
+          OpenDota ↗
+        </a>
+        <button onclick="refreshData()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold transition shadow-lg shadow-indigo-600/30">
+          ↻ Aktualisieren
+        </button>
+      </div>
+    </header>
 
-    <!-- Footer -->
-    <footer>
-        <div class="socials">
-            <a href="https://github.com/Neronautix" target="_blank"><i class="fab fa-github"></i></a>
-            <!-- Füge bei Bedarf Twitter, LinkedIn etc. hinzu -->
+    <!-- Loading -->
+    <div id="loading" class="text-center py-20">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
+      <p class="mt-4 text-slate-400">Lade Statistiken von OpenDota API...</p>
+    </div>
+
+    <!-- Content -->
+    <div id="content" class="hidden space-y-10">
+
+      <!-- Overview Stats -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span class="text-indigo-400">📊</span> Übersicht
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="stat-card bg-slate-800/70 backdrop-blur rounded-2xl p-5 border border-slate-700">
+            <p class="text-slate-400 text-sm">Matches</p>
+            <p id="total-matches" class="text-3xl font-bold mt-1">–</p>
+          </div>
+          <div class="stat-card bg-slate-800/70 backdrop-blur rounded-2xl p-5 border border-slate-700">
+            <p class="text-slate-400 text-sm">Winrate</p>
+            <p id="winrate" class="text-3xl font-bold mt-1">–</p>
+            <p id="wl-detail" class="text-sm text-slate-400 mt-1"></p>
+          </div>
+          <div class="stat-card bg-slate-800/70 backdrop-blur rounded-2xl p-5 border border-slate-700">
+            <p class="text-slate-400 text-sm">Ø KDA</p>
+            <p id="avg-kda" class="text-3xl font-bold mt-1">–</p>
+          </div>
+          <div class="stat-card bg-slate-800/70 backdrop-blur rounded-2xl p-5 border border-slate-700">
+            <p class="text-slate-400 text-sm">Ø GPM / XPM</p>
+            <p id="avg-gpm-xpm" class="text-2xl font-bold mt-1">–</p>
+          </div>
         </div>
-        <p>&copy; 2026 Neronautix. Built with ❤️ and lots of coffee.</p>
+      </section>
+
+      <!-- More Totals -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span class="text-indigo-400">⚔️</span> Karriere-Totals
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50 text-center">
+            <p class="text-slate-400 text-xs uppercase tracking-wide">Kills</p>
+            <p id="tot-kills" class="text-xl font-bold text-emerald-400">–</p>
+          </div>
+          <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50 text-center">
+            <p class="text-slate-400 text-xs uppercase tracking-wide">Deaths</p>
+            <p id="tot-deaths" class="text-xl font-bold text-red-400">–</p>
+          </div>
+          <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50 text-center">
+            <p class="text-slate-400 text-xs uppercase tracking-wide">Assists</p>
+            <p id="tot-assists" class="text-xl font-bold text-sky-400">–</p>
+          </div>
+          <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50 text-center">
+            <p class="text-slate-400 text-xs uppercase tracking-wide">Last Hits</p>
+            <p id="tot-lh" class="text-xl font-bold">–</p>
+          </div>
+          <div class="bg-slate-800/60 rounded-xl p-4 border border-slate-700/50 text-center">
+            <p class="text-slate-400 text-xs uppercase tracking-wide">Hero Damage</p>
+            <p id="tot-hd" class="text-xl font-bold">–</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Top Heroes -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span class="text-indigo-400">🦸</span> Top Helden (nach Spielen)
+        </h2>
+        <div id="top-heroes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- Recent Matches -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span class="text-indigo-400">🕒</span> Letzte Matches
+        </h2>
+        <div class="overflow-x-auto rounded-2xl border border-slate-700">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-800/80">
+              <tr class="text-left text-slate-400">
+                <th class="px-4 py-3">Ergebnis</th>
+                <th class="px-4 py-3">Held</th>
+                <th class="px-4 py-3">K/D/A</th>
+                <th class="px-4 py-3">GPM</th>
+                <th class="px-4 py-3">Dauer</th>
+                <th class="px-4 py-3">Datum</th>
+                <th class="px-4 py-3">Link</th>
+              </tr>
+            </thead>
+            <tbody id="recent-matches" class="divide-y divide-slate-700/50"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Peers -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span class="text-indigo-400">👥</span> Häufigste Team-Partner
+        </h2>
+        <div id="peers" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- Winrate Chart -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+          <span class="text-indigo-400">📈</span> Winrate Top 10 Helden
+        </h2>
+        <div class="bg-slate-800/60 rounded-2xl p-6 border border-slate-700">
+          <canvas id="winrateChart" height="120"></canvas>
+        </div>
+      </section>
+
+    </div>
+
+    <footer class="mt-16 text-center text-slate-500 text-sm">
+      Daten von <a href="https://www.opendota.com" target="_blank" class="text-indigo-400 hover:underline">OpenDota API</a>
+      · ENT Stack Stats
     </footer>
+  </div>
 
+  <script>
+    // ─── Profile definitions (main player + most frequent stack partners) ───
+    const PROFILES = [
+      {
+        id: 48681338,
+        name: 'ENT | Ladung',
+        short: 'Ladung',
+        avatar: 'https://avatars.steamstatic.com/09ceaecc1c3de69858b3ff8218db0b933b828c46_medium.jpg',
+        color: 'indigo'
+      },
+      {
+        id: 114923598,
+        name: 'ENT | Wicklung',
+        short: 'Wicklung',
+        avatar: 'https://avatars.steamstatic.com/29aa458adcdcdaf962a70f948aa42982c4b9f59e.jpg',
+        color: 'violet'
+      },
+      {
+        id: 83155409,
+        name: 'ENT | E',
+        short: 'E',
+        avatar: 'https://avatars.steamstatic.com/3c67f96ab6eee60b13129b7a58157d93313b77e5.jpg',
+        color: 'fuchsia'
+      },
+      {
+        id: 40435971,
+        name: 'F!sc_',
+        short: 'F!sc_',
+        avatar: 'https://avatars.steamstatic.com/ec8b133c76fac5c571f2738cb295b8895c1f09ce.jpg',
+        color: 'cyan'
+      },
+      {
+        id: 82070100,
+        name: 'ENT | Haltung',
+        short: 'Haltung',
+        avatar: 'https://avatars.steamstatic.com/d194bd1c4203ebce87e6d86bc6b3c4ae6f717b8d.jpg',
+        color: 'amber'
+      },
+      {
+        id: 120292338,
+        name: 'ENT | Zauberung',
+        short: 'Zauberung',
+        avatar: 'https://avatars.steamstatic.com/2755b3fba00414bbb7206d658adbaeed6867c119.jpg',
+        color: 'rose'
+      }
+    ];
+
+    const API = 'https://api.opendota.com/api';
+    let currentId = PROFILES[0].id;
+    let heroesMap = {};
+    let chartInstance = null;
+
+    // ─── Helpers ───────────────────────────────────────────────────────────
+    function rankTierToString(tier) {
+      if (!tier) return 'Unranked';
+      const medals = ['', 'Herald', 'Guardian', 'Crusader', 'Archon', 'Legend', 'Ancient', 'Divine', 'Immortal'];
+      const medal = Math.floor(tier / 10);
+      const stars = tier % 10;
+      return `${medals[medal] || 'Unknown'} ${stars}`;
+    }
+
+    function formatNumber(n) {
+      if (n == null) return '–';
+      if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
+      return n.toLocaleString('de-DE');
+    }
+
+    function formatDuration(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function formatDate(ts) {
+      return new Date(ts * 1000).toLocaleDateString('de-DE', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function isWin(match) {
+      const isRadiant = match.player_slot < 128;
+      return isRadiant === match.radiant_win;
+    }
+
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // ─── Profile tabs ──────────────────────────────────────────────────────
+    function renderProfileTabs() {
+      const container = document.getElementById('profile-tabs');
+      container.innerHTML = PROFILES.map(p => `
+        <button
+          onclick="switchProfile(${p.id})"
+          class="profile-tab flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 ${p.id === currentId ? 'active' : ''}"
+          data-id="${p.id}"
+        >
+          <img src="${p.avatar}" alt="" class="w-8 h-8 rounded-full object-cover border border-slate-600" />
+          <div class="text-left">
+            <p class="font-semibold text-sm leading-tight">${p.short}</p>
+            <p class="text-xs text-slate-400 font-mono">${p.id}</p>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function switchProfile(id) {
+      if (id === currentId) return;
+      currentId = id;
+      renderProfileTabs();
+      loadAll();
+    }
+
+    // ─── Data loading ──────────────────────────────────────────────────────
+    async function loadHeroes() {
+      if (Object.keys(heroesMap).length) return;
+      const heroes = await fetchJSON(`${API}/heroes`);
+      heroes.forEach(h => { heroesMap[h.id] = h.localized_name; });
+    }
+
+    async function loadAll() {
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('content').classList.add('hidden');
+      document.getElementById('account-id').textContent = currentId;
+      document.getElementById('opendota-link').href = `https://www.opendota.com/players/${currentId}`;
+      document.title = `Dota 2 Stats – ${PROFILES.find(p => p.id === currentId)?.name || currentId}`;
+
+      try {
+        await loadHeroes();
+
+        const [player, wl, totals, heroes, recent, peers] = await Promise.all([
+          fetchJSON(`${API}/players/${currentId}`),
+          fetchJSON(`${API}/players/${currentId}/wl`),
+          fetchJSON(`${API}/players/${currentId}/totals`),
+          fetchJSON(`${API}/players/${currentId}/heroes`),
+          fetchJSON(`${API}/players/${currentId}/recentMatches`),
+          fetchJSON(`${API}/players/${currentId}/peers`)
+        ]);
+
+        // Profile header
+        const avatarUrl = player.profile?.avatarfull || player.profile?.avatarmedium || '';
+        document.getElementById('avatar').src = avatarUrl;
+        document.getElementById('player-name').textContent = player.profile?.personaname || 'Unknown';
+        document.getElementById('rank-badge').textContent = rankTierToString(player.rank_tier);
+        document.getElementById('mmr-badge').textContent = player.computed_mmr
+          ? `~${Math.round(player.computed_mmr)} MMR`
+          : 'MMR n/a';
+        document.getElementById('country-badge').textContent = player.profile?.loccountrycode
+          ? `🌍 ${player.profile.loccountrycode}`
+          : '';
+
+        // Update tab avatar if we got a better one
+        const tabImg = document.querySelector(`.profile-tab[data-id="${currentId}"] img`);
+        if (tabImg && avatarUrl) tabImg.src = avatarUrl;
+
+        // WL
+        const total = (wl.win || 0) + (wl.lose || 0);
+        const wr = total ? ((wl.win / total) * 100).toFixed(1) : 0;
+        document.getElementById('total-matches').textContent = total.toLocaleString('de-DE');
+        document.getElementById('winrate').textContent = wr + '%';
+        document.getElementById('winrate').className = `text-3xl font-bold mt-1 ${wr >= 50 ? 'win' : 'loss'}`;
+        document.getElementById('wl-detail').textContent = `${wl.win || 0} W / ${wl.lose || 0} L`;
+
+        // Totals
+        const getTot = (field) => totals.find(t => t.field === field) || { sum: 0, n: 1 };
+        const kills = getTot('kills');
+        const deaths = getTot('deaths');
+        const assists = getTot('assists');
+        const gpm = getTot('gold_per_min');
+        const xpm = getTot('xp_per_min');
+        const lh = getTot('last_hits');
+        const hd = getTot('hero_damage');
+
+        const avgKDA = ((kills.sum + assists.sum) / Math.max(deaths.sum, 1)).toFixed(2);
+        document.getElementById('avg-kda').textContent = avgKDA;
+        document.getElementById('avg-gpm-xpm').textContent =
+          `${Math.round(gpm.sum / Math.max(gpm.n, 1))} / ${Math.round(xpm.sum / Math.max(xpm.n, 1))}`;
+
+        document.getElementById('tot-kills').textContent = formatNumber(kills.sum);
+        document.getElementById('tot-deaths').textContent = formatNumber(deaths.sum);
+        document.getElementById('tot-assists').textContent = formatNumber(assists.sum);
+        document.getElementById('tot-lh').textContent = formatNumber(lh.sum);
+        document.getElementById('tot-hd').textContent = formatNumber(hd.sum);
+
+        // Top Heroes
+        const topHeroes = heroes
+          .filter(h => h.games >= 15)
+          .sort((a, b) => b.games - a.games)
+          .slice(0, 12);
+
+        document.getElementById('top-heroes').innerHTML = topHeroes.map(h => {
+          const hwr = h.games ? ((h.win / h.games) * 100).toFixed(1) : 0;
+          const name = heroesMap[h.hero_id] || `Hero ${h.hero_id}`;
+          return `
+            <div class="hero-card bg-slate-800/70 rounded-xl p-4 border border-slate-700 flex items-center gap-4 transition">
+              <div class="flex-1">
+                <p class="font-semibold text-lg">${name}</p>
+                <p class="text-sm text-slate-400">${h.games} Spiele · <span class="${hwr >= 50 ? 'win' : 'loss'}">${hwr}% WR</span></p>
+                <div class="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full" style="width:${Math.min(hwr, 100)}%"></div>
+                </div>
+              </div>
+              <div class="text-right text-sm">
+                <p class="text-emerald-400">${h.win} W</p>
+                <p class="text-red-400">${h.games - h.win} L</p>
+              </div>
+            </div>`;
+        }).join('') || '<p class="text-slate-400 col-span-full">Keine Helden-Daten.</p>';
+
+        // Recent Matches
+        document.getElementById('recent-matches').innerHTML = (recent || []).slice(0, 15).map(m => {
+          const won = isWin(m);
+          const name = heroesMap[m.hero_id] || `Hero ${m.hero_id}`;
+          return `
+            <tr class="hover:bg-slate-800/50">
+              <td class="px-4 py-3"><span class="font-bold ${won ? 'win' : 'loss'}">${won ? 'WIN' : 'LOSS'}</span></td>
+              <td class="px-4 py-3 font-medium">${name}</td>
+              <td class="px-4 py-3 font-mono">${m.kills}/${m.deaths}/${m.assists}</td>
+              <td class="px-4 py-3">${m.gold_per_min ?? '–'}</td>
+              <td class="px-4 py-3">${formatDuration(m.duration)}</td>
+              <td class="px-4 py-3 text-slate-400">${formatDate(m.start_time)}</td>
+              <td class="px-4 py-3">
+                <a href="https://www.opendota.com/matches/${m.match_id}" target="_blank" class="text-indigo-400 hover:underline">OpenDota</a>
+              </td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Keine Matches.</td></tr>';
+
+        // Peers – highlight known stack members
+        const knownIds = new Set(PROFILES.map(p => p.id));
+        const topPeers = (peers || []).filter(p => p.with_games >= 5).slice(0, 9);
+
+        document.getElementById('peers').innerHTML = topPeers.map(p => {
+          const pwr = p.with_games ? ((p.with_win / p.with_games) * 100).toFixed(1) : 0;
+          const isKnown = knownIds.has(p.account_id) && p.account_id !== currentId;
+          return `
+            <div class="bg-slate-800/70 rounded-xl p-4 border ${isKnown ? 'border-indigo-500/60' : 'border-slate-700'} flex items-center gap-4">
+              <img src="${p.avatarfull || p.avatar || ''}" class="w-12 h-12 rounded-full border-2 border-slate-600 object-cover" onerror="this.style.display='none'" />
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold truncate ${isKnown ? 'text-indigo-300' : ''}">${p.personaname || 'Unknown'}${isKnown ? ' ★' : ''}</p>
+                <p class="text-sm text-slate-400">${p.with_games} Spiele zusammen</p>
+                <p class="text-sm ${pwr >= 50 ? 'win' : 'loss'}">${pwr}% Winrate</p>
+              </div>
+              ${isKnown ? `<button onclick="switchProfile(${p.account_id})" class="text-xs px-2 py-1 rounded-lg bg-indigo-600/40 hover:bg-indigo-600/70 transition">Öffnen</button>` : ''}
+            </div>`;
+        }).join('') || '<p class="text-slate-400">Keine Peers gefunden.</p>';
+
+        // Chart
+        const chartHeroes = topHeroes.slice(0, 10);
+        const ctx = document.getElementById('winrateChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: chartHeroes.map(h => heroesMap[h.hero_id] || h.hero_id),
+            datasets: [{
+              label: 'Winrate %',
+              data: chartHeroes.map(h => +(h.win / h.games * 100).toFixed(1)),
+              backgroundColor: chartHeroes.map(h => {
+                const w = h.win / h.games * 100;
+                return w >= 55 ? 'rgba(34, 197, 94, 0.7)' :
+                       w >= 50 ? 'rgba(99, 102, 241, 0.7)' :
+                       'rgba(239, 68, 68, 0.7)';
+              }),
+              borderRadius: 6,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  afterLabel: (c) => {
+                    const h = chartHeroes[c.dataIndex];
+                    return `${h.win}W / ${h.games - h.win}L (${h.games} Spiele)`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true, max: 100,
+                grid: { color: 'rgba(148,163,184,0.1)' },
+                ticks: { color: '#94a3b8' }
+              },
+              x: {
+                grid: { display: false },
+                ticks: { color: '#94a3b8', maxRotation: 45 }
+              }
+            }
+          }
+        });
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('content').classList.remove('hidden');
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('loading').innerHTML = `
+          <p class="text-red-400 text-lg">Fehler beim Laden der Daten</p>
+          <p class="text-slate-400 mt-2">${err.message}</p>
+          <button onclick="refreshData()" class="mt-4 px-4 py-2 bg-indigo-600 rounded-lg">Erneut versuchen</button>
+        `;
+      }
+    }
+
+    function refreshData() {
+      loadAll();
+    }
+
+    // Init
+    renderProfileTabs();
+    loadAll();
+  </script>
 </body>
 </html>
