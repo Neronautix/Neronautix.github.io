@@ -553,10 +553,17 @@
 
         // Peers – highlight known stack members
         const knownIds = new Set(PROFILES.map(p => p.id));
-        const topPeers = (peers || []).filter(p => p.with_games >= 5).slice(0, 9);
+        const topPeers = (peers || []).filter(p => {
+          const withGames = Number(p?.with_games);
+          const withWin = Number(p?.with_win);
+          return Number.isFinite(withGames) && withGames >= 5 &&
+            Number.isFinite(withWin) && withWin >= 0 && withWin <= withGames;
+        }).slice(0, 9);
 
         document.getElementById('peers').innerHTML = topPeers.map(p => {
-          const pwr = p.with_games ? ((p.with_win / p.with_games) * 100).toFixed(1) : 0;
+          const withGames = Number(p.with_games);
+          const withWin = Number(p.with_win);
+          const pwr = ((withWin / withGames) * 100).toFixed(1);
           const peerId = asNonNegativeNumber(p.account_id, -1);
           const isKnown = knownIds.has(peerId) && peerId !== currentId;
           return `
