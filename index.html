@@ -256,11 +256,32 @@
       return `${medals[medal] || 'Unknown'} ${stars}`;
     }
 
+    // Escape API-provided text before inserting it into HTML templates.
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
+    function safeAvatarUrl(value) {
+      try {
+        const url = new URL(String(value || ''));
+        const hosts = new Set(['avatars.steamstatic.com', 'steamcdn-a.akamaihd.net', 'cdn.akamai.steamstatic.com']);
+        return url.protocol === 'https:' && hosts.has(url.hostname) ? url.href : '';
+      } catch { return ''; }
+    }
+
+    function asNonNegativeNumber(value, fallback = 0) {
+      const number = Number(value);
+      return Number.isFinite(number) && number >= 0 ? number : fallback;
+    }
+
     function formatNumber(n) {
-      if (n == null) return '–';
-      if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-      if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
-      return n.toLocaleString('de-DE');
+      const value = Number(n);
+      if (!Number.isFinite(value) || value < 0) return '–';
+      if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
+      if (value >= 1e3) return (value / 1e3).toFixed(1) + 'k';
+      return value.toLocaleString('de-DE');
     }
 
     function formatDuration(sec) {
@@ -287,26 +308,44 @@
 
     /** Fetch mit Retry bei 429 und optionalem API-Key */
     async function fetchJSON(url, retries = 3) {
+      // A browser-side API key is public; only use one intended for public client-side use.
       const fullUrl = API_KEY
-        ? (url.includes('?') ? `${url}&api_key=${API_KEY}` : `${url}?api_key=${API_KEY}`)
+        ? (url.includes('?') ? `${url}&api_key=${encodeURIComponent(API_KEY)}` : `${url}?api_key=${encodeURIComponent(API_KEY)}`)
         : url;
 
       for (let attempt = 0; attempt <= retries; attempt++) {
-        const res = await fetch(fullUrl);
+        let res;
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 15000);
+          try {
+            res = await fetch(fullUrl, { signal: controller.signal });
+          } finally {
+            clearTimeout(timeout);
+          }
+        } catch (error) {
+          if (error?.name === 'AbortError') throw new Error('Zeitüberschreitung beim Abruf von OpenDota. Bitte erneut versuchen.');
+          throw new Error('OpenDota ist nicht erreichbar. Bitte Internetverbindung prüfen und erneut versuchen.');
+        }
 
         if (res.status === 429) {
-          // Retry-After Header oder exponential backoff
-          const retryAfter = parseInt(res.headers.get('Retry-After') || '0', 10);
-          const wait = retryAfter > 0 ? retryAfter * 1000 : Math.min(1000 * Math.pow(2, attempt), 8000);
+          const retryAfter = Number.parseInt(res.headers.get('Retry-After') || '0', 10);
+          const wait = retryAfter > 0 ? Math.min(retryAfter * 1000, 30000) : Math.min(1000 * (2 ** attempt), 8000);
           console.warn(`429 Rate Limit – warte ${wait}ms (Versuch ${attempt + 1}/${retries + 1})`);
-          if (attempt === retries) throw new Error('Rate Limit (429) – bitte 1 Minute warten und erneut versuchen');
+          if (attempt === retries) throw new Error('OpenDota begrenzt gerade die Anfragen (429). Bitte kurz warten und erneut versuchen.');
           await sleep(wait);
           continue;
         }
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+        if (!res.ok) {
+          if (res.status === 404) throw new Error('Für dieses Profil wurden keine OpenDota-Daten gefunden.');
+          throw new Error(`OpenDota antwortet mit HTTP ${res.status}.`);
+        }
+
+        try { return await res.json(); }
+        catch { throw new Error('OpenDota hat keine gültigen JSON-Daten zurückgegeben.'); }
       }
+      throw new Error('Die OpenDota-Anfrage konnte nicht abgeschlossen werden.');
     }
 
     /** Endpoints nacheinander laden (weniger Last auf die API) */
@@ -323,17 +362,20 @@
       const results = [];
       for (let i = 0; i < endpoints.length; i++) {
         results.push(await fetchJSON(endpoints[i]));
-        // kleine Pause zwischen Requests (außer beim letzten)
-        if (i < endpoints.length - 1) await sleep(120);
+        if (i < endpoints.length - 1) await sleep(150);
       }
-      return {
-        player: results[0],
-        wl: results[1],
-        totals: results[2],
-        heroes: results[3],
-        recent: results[4],
-        peers: results[5]
-      };
+
+      const [player, wl, totals, heroes, recent, peers] = results;
+      if (!player || typeof player !== 'object' || !player.profile) {
+        throw new Error('Das Spielerprofil ist unvollständig oder nicht öffentlich verfügbar.');
+      }
+      if (!wl || !Number.isFinite(Number(wl.win)) || !Number.isFinite(Number(wl.lose))) {
+        throw new Error('OpenDota hat keine gültigen Sieg-/Niederlagen-Daten geliefert.');
+      }
+      if (![totals, heroes, recent, peers].every(Array.isArray)) {
+        throw new Error('OpenDota hat unvollständige Statistikdaten geliefert. Bitte später erneut versuchen.');
+      }
+      return { player, wl, totals, heroes, recent, peers };
     }
 
     // ─── Profile tabs ──────────────────────────────────────────────────────
@@ -348,9 +390,9 @@
           data-id="${p.id}"
           ${isLoading ? 'disabled' : ''}
         >
-          <img src="${p.avatar}" alt="" class="w-8 h-8 rounded-full object-cover border border-slate-600" />
+          <img src="${escapeHTML(safeAvatarUrl(p.avatar))}" alt="" class="w-8 h-8 rounded-full object-cover border border-slate-600" />
           <div class="text-left">
-            <p class="font-semibold text-sm leading-tight">${p.short}${cached ? ' <span class="text-emerald-400 text-xs">●</span>' : ''}</p>
+            <p class="font-semibold text-sm leading-tight">${escapeHTML(p.short)}${cached ? ' <span class="text-emerald-400 text-xs">●</span>' : ''}</p>
             <p class="text-xs text-slate-400 font-mono">${p.id}</p>
           </div>
         </button>`;
@@ -368,7 +410,10 @@
     async function loadHeroes() {
       if (Object.keys(heroesMap).length) return;
       const heroes = await fetchJSON(`${API}/heroes`);
-      heroes.forEach(h => { heroesMap[h.id] = h.localized_name; });
+      if (!Array.isArray(heroes)) throw new Error('Die Heldenliste von OpenDota ist ungültig.');
+      heroes.forEach(h => {
+        if (Number.isInteger(Number(h.id)) && typeof h.localized_name === 'string') heroesMap[Number(h.id)] = h.localized_name;
+      });
     }
 
     async function loadAll(forceRefresh = false) {
@@ -413,8 +458,9 @@
         }
 
         // Profile header
-        const avatarUrl = player.profile?.avatarfull || player.profile?.avatarmedium || '';
+        const avatarUrl = safeAvatarUrl(player.profile?.avatarfull || player.profile?.avatarmedium || '');
         document.getElementById('avatar').src = avatarUrl;
+        document.getElementById('avatar').hidden = !avatarUrl;
         document.getElementById('player-name').textContent = player.profile?.personaname || 'Unknown';
         document.getElementById('rank-badge').textContent = rankTierToString(player.rank_tier);
         document.getElementById('mmr-badge').textContent = player.computed_mmr
@@ -429,15 +475,20 @@
         if (tabImg && avatarUrl) tabImg.src = avatarUrl;
 
         // WL
-        const total = (wl.win || 0) + (wl.lose || 0);
-        const wr = total ? ((wl.win / total) * 100).toFixed(1) : 0;
+        const wins = asNonNegativeNumber(wl.win);
+        const losses = asNonNegativeNumber(wl.lose);
+        const total = wins + losses;
+        const wr = total ? ((wins / total) * 100).toFixed(1) : '0.0';
         document.getElementById('total-matches').textContent = total.toLocaleString('de-DE');
         document.getElementById('winrate').textContent = wr + '%';
         document.getElementById('winrate').className = `text-3xl font-bold mt-1 ${wr >= 50 ? 'win' : 'loss'}`;
-        document.getElementById('wl-detail').textContent = `${wl.win || 0} W / ${wl.lose || 0} L`;
+        document.getElementById('wl-detail').textContent = `${wins} W / ${losses} L`;
 
         // Totals
-        const getTot = (field) => totals.find(t => t.field === field) || { sum: 0, n: 1 };
+        const getTot = (field) => {
+          const item = totals.find(t => t.field === field);
+          return { sum: asNonNegativeNumber(item?.sum), n: Math.max(1, asNonNegativeNumber(item?.n, 1)) };
+        };
         const kills = getTot('kills');
         const deaths = getTot('deaths');
         const assists = getTot('assists');
@@ -470,14 +521,14 @@
             <div class="hero-card bg-slate-800/70 rounded-xl p-4 border border-slate-700 flex items-center gap-4 transition">
               <div class="flex-1">
                 <p class="font-semibold text-lg">${name}</p>
-                <p class="text-sm text-slate-400">${h.games} Spiele · <span class="${hwr >= 50 ? 'win' : 'loss'}">${hwr}% WR</span></p>
+                <p class="text-sm text-slate-400">${asNonNegativeNumber(h.games)} Spiele · <span class="${hwr >= 50 ? 'win' : 'loss'}">${escapeHTML(hwr)}% WR</span></p>
                 <div class="mt-2 h-2 bg-slate-700 rounded-full overflow-hidden">
                   <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full" style="width:${Math.min(hwr, 100)}%"></div>
                 </div>
               </div>
               <div class="text-right text-sm">
-                <p class="text-emerald-400">${h.win} W</p>
-                <p class="text-red-400">${h.games - h.win} L</p>
+                <p class="text-emerald-400">${asNonNegativeNumber(h.win)} W</p>
+                <p class="text-red-400">${Math.max(0, asNonNegativeNumber(h.games) - asNonNegativeNumber(h.win))} L</p>
               </div>
             </div>`;
         }).join('') || '<p class="text-slate-400 col-span-full">Keine Helden-Daten.</p>';
@@ -490,12 +541,12 @@
             <tr class="hover:bg-slate-800/50">
               <td class="px-4 py-3"><span class="font-bold ${won ? 'win' : 'loss'}">${won ? 'WIN' : 'LOSS'}</span></td>
               <td class="px-4 py-3 font-medium">${name}</td>
-              <td class="px-4 py-3 font-mono">${m.kills}/${m.deaths}/${m.assists}</td>
-              <td class="px-4 py-3">${m.gold_per_min ?? '–'}</td>
-              <td class="px-4 py-3">${formatDuration(m.duration)}</td>
-              <td class="px-4 py-3 text-slate-400">${formatDate(m.start_time)}</td>
+              <td class="px-4 py-3 font-mono">${asNonNegativeNumber(m.kills)}/${asNonNegativeNumber(m.deaths)}/${asNonNegativeNumber(m.assists)}</td>
+              <td class="px-4 py-3">${Number.isFinite(Number(m.gold_per_min)) ? asNonNegativeNumber(m.gold_per_min) : '–'}</td>
+              <td class="px-4 py-3">${formatDuration(asNonNegativeNumber(m.duration))}</td>
+              <td class="px-4 py-3 text-slate-400">${escapeHTML(formatDate(asNonNegativeNumber(m.start_time)))}</td>
               <td class="px-4 py-3">
-                <a href="https://www.opendota.com/matches/${m.match_id}" target="_blank" class="text-indigo-400 hover:underline">OpenDota</a>
+                <a href="https://www.opendota.com/matches/${asNonNegativeNumber(m.match_id)}" target="_blank" class="text-indigo-400 hover:underline">OpenDota</a>
               </td>
             </tr>`;
         }).join('') || '<tr><td colspan="7" class="px-4 py-6 text-center text-slate-400">Keine Matches.</td></tr>';
@@ -509,11 +560,11 @@
           const isKnown = knownIds.has(p.account_id) && p.account_id !== currentId;
           return `
             <div class="bg-slate-800/70 rounded-xl p-4 border ${isKnown ? 'border-indigo-500/60' : 'border-slate-700'} flex items-center gap-4">
-              <img src="${p.avatarfull || p.avatar || ''}" class="w-12 h-12 rounded-full border-2 border-slate-600 object-cover" onerror="this.style.display='none'" />
+              <img src="${escapeHTML(safeAvatarUrl(p.avatarfull || p.avatar || ''))}" class="w-12 h-12 rounded-full border-2 border-slate-600 object-cover" onerror="this.style.display='none'" />
               <div class="flex-1 min-w-0">
-                <p class="font-semibold truncate ${isKnown ? 'text-indigo-300' : ''}">${p.personaname || 'Unknown'}${isKnown ? ' ★' : ''}</p>
-                <p class="text-sm text-slate-400">${p.with_games} Spiele zusammen</p>
-                <p class="text-sm ${pwr >= 50 ? 'win' : 'loss'}">${pwr}% Winrate</p>
+                <p class="font-semibold truncate ${isKnown ? 'text-indigo-300' : ''}">${escapeHTML(p.personaname || 'Unknown')}${isKnown ? ' ★' : ''}</p>
+                <p class="text-sm text-slate-400">${withGames} Spiele zusammen</p>
+                <p class="text-sm ${pwr >= 50 ? 'win' : 'loss'}">${escapeHTML(pwr)}% Winrate</p>
               </div>
               ${isKnown ? `<button onclick="switchProfile(${p.account_id})" class="text-xs px-2 py-1 rounded-lg bg-indigo-600/40 hover:bg-indigo-600/70 transition">Öffnen</button>` : ''}
             </div>`;
@@ -547,7 +598,7 @@
                 callbacks: {
                   afterLabel: (c) => {
                     const h = chartHeroes[c.dataIndex];
-                    return `${h.win}W / ${h.games - h.win}L (${h.games} Spiele)`;
+                    return `${asNonNegativeNumber(h.win)}W / ${Math.max(0, asNonNegativeNumber(h.games) - asNonNegativeNumber(h.win))}L (${asNonNegativeNumber(h.games)} Spiele)`;
                   }
                 }
               }
@@ -573,8 +624,8 @@
         console.error(err);
         document.getElementById('loading').innerHTML = `
           <p class="text-red-400 text-lg">Fehler beim Laden der Daten</p>
-          <p class="text-slate-400 mt-2">${err.message}</p>
-          <p class="text-slate-500 text-sm mt-1">Bei 429: ca. 1 Minute warten, dann erneut versuchen.</p>
+          <p class="text-slate-400 mt-2">${escapeHTML(err?.message || 'Unbekannter Fehler')}</p>
+          <p class="text-slate-500 text-sm mt-1">Bitte kurz warten und erneut versuchen.</p>
           <button onclick="refreshData()" class="mt-4 px-4 py-2 bg-indigo-600 rounded-lg">Erneut versuchen</button>
         `;
       } finally {
