@@ -516,7 +516,7 @@
 
         document.getElementById('top-heroes').innerHTML = topHeroes.map(h => {
           const hwr = h.games ? ((h.win / h.games) * 100).toFixed(1) : 0;
-          const name = heroesMap[h.hero_id] || `Hero ${h.hero_id}`;
+          const name = escapeHTML(heroesMap[h.hero_id] || `Hero ${asNonNegativeNumber(h.hero_id)}`);
           return `
             <div class="hero-card bg-slate-800/70 rounded-xl p-4 border border-slate-700 flex items-center gap-4 transition">
               <div class="flex-1">
@@ -536,7 +536,7 @@
         // Recent Matches
         document.getElementById('recent-matches').innerHTML = (recent || []).slice(0, 15).map(m => {
           const won = isWin(m);
-          const name = heroesMap[m.hero_id] || `Hero ${m.hero_id}`;
+          const name = escapeHTML(heroesMap[m.hero_id] || `Hero ${asNonNegativeNumber(m.hero_id)}`);
           return `
             <tr class="hover:bg-slate-800/50">
               <td class="px-4 py-3"><span class="font-bold ${won ? 'win' : 'loss'}">${won ? 'WIN' : 'LOSS'}</span></td>
@@ -557,7 +557,8 @@
 
         document.getElementById('peers').innerHTML = topPeers.map(p => {
           const pwr = p.with_games ? ((p.with_win / p.with_games) * 100).toFixed(1) : 0;
-          const isKnown = knownIds.has(p.account_id) && p.account_id !== currentId;
+          const peerId = asNonNegativeNumber(p.account_id, -1);
+          const isKnown = knownIds.has(peerId) && peerId !== currentId;
           return `
             <div class="bg-slate-800/70 rounded-xl p-4 border ${isKnown ? 'border-indigo-500/60' : 'border-slate-700'} flex items-center gap-4">
               <img src="${escapeHTML(safeAvatarUrl(p.avatarfull || p.avatar || ''))}" class="w-12 h-12 rounded-full border-2 border-slate-600 object-cover" onerror="this.style.display='none'" />
@@ -566,7 +567,7 @@
                 <p class="text-sm text-slate-400">${withGames} Spiele zusammen</p>
                 <p class="text-sm ${pwr >= 50 ? 'win' : 'loss'}">${escapeHTML(pwr)}% Winrate</p>
               </div>
-              ${isKnown ? `<button onclick="switchProfile(${p.account_id})" class="text-xs px-2 py-1 rounded-lg bg-indigo-600/40 hover:bg-indigo-600/70 transition">Öffnen</button>` : ''}
+              ${isKnown ? `<button onclick="switchProfile(${peerId})" class="text-xs px-2 py-1 rounded-lg bg-indigo-600/40 hover:bg-indigo-600/70 transition">Öffnen</button>` : ''}
             </div>`;
         }).join('') || '<p class="text-slate-400">Keine Peers gefunden.</p>';
 
